@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cryonix Concierge — Lifecycle Builder</title>
+  <link rel="stylesheet" href="concierge-ui/css/main.css" />
+  <script defer src="concierge-ui/js/api.js"></script>
+  <script defer src="concierge-ui/js/lifecycles.js"></script>
+</head>
+
+<body class="app-body">
+
+  <header class="app-header">
+    <div class="app-header-left">
+      <div class="app-logo-placeholder">CX</div>
+      <div class="app-title">Cryonix Concierge</div>
+    </div>
+
+    <div class="app-user">
+      <span class="user-name">Operator</span>
+      <span class="user-role">ILM Console</span>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <section class="page-header">
+      <h1 class="page-title">Lifecycle Builder</h1>
+      <p class="page-subtitle">Create lifecycle definitions using Optim Archive, Insert, and Delete requests.</p>
+    </section>
+
+    <!-- Filter Bar -->
+    <section class="filter-bar">
+      <input id="archive-filter" class="filter-input" type="text" placeholder="Filter Archive Requests..." />
+      <label class="filter-checkbox">
+        <input type="checkbox" id="filter-unconfigured" />
+        Show only unconfigured
+      </label>
+    </section>
+
+    <!-- Lifecycle Builder Table -->
+    <section class="lifecycle-table-section">
+      <table class="lifecycle-table">
+        <thead>
+          <tr>
+            <th>Archive Request*</th>
+            <th>Insert Request (optional)</th>
+            <th>Delete Request*</th>
+            <th>Insert Before Delete?</th>
+            <th>Lifecycle Name</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody id="lifecycle-table-body">
+          <!-- Rows injected dynamically by lifecycles.js -->
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <span>Cryonix Concierge — Operations Layer for IBM Optim®</span>
+  </footer>
+
+</body>
+</html>

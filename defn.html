@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lifecycle Definition</title>
+</head>
+<body>
+    <pre id="output">Loading...</pre>
+
+    <script>
+        // Get lifecycle ID from URL
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+
+        // Fetch filtered JSON from backend
+        fetch(`/api/v1/lifecycle/definition/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("output").textContent =
+                    JSON.stringify(data, null, 4);
+            })
+            .catch(err => {
+                document.getElementById("output").textContent =
+                    "Error loading definition: " + err;
+            });
+    </script>
+</body>
+</html>

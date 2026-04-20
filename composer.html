@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryonix — Lifecycle Composer</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/composer.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <span class="brand-name">Cryonix</span>
+        <span class="brand-sub">Data Lifecycle Orchestration</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="server-status">
+        <span class="status-dot"></span>
+        OPTIM SERVER · CONNECTED
+      </span>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="page-header">
+      <div>
+        <h1 class="title">Lifecycle Composer</h1>
+        <p class="subtitle">
+          Compose archive, insert, and delete operations into named lifecycle definitions.
+          Each archive request is the starting point — pair it with an insert and delete operation.
+        </p>
+      </div>
+      <div class="page-actions">
+        <a href="../index.html" class="back-link-inline">← Monitor</a>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="composer-legend">
+      <div class="legend-item">
+        <span class="legend-dot legend-ar"></span>
+        <span>Archive Request — defines what data is selected</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot legend-ir"></span>
+        <span>Insert Request — restores data to a target environment</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot legend-dr"></span>
+        <span>Delete Request — removes data from source</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot legend-rule"></span>
+        <span>Delete Rule — when enabled, delete only proceeds after insert completes</span>
+      </div>
+    </div>
+
+    <!-- Composer Table -->
+    <div class="table-wrap">
+      <table class="composer-table" id="composer-table">
+        <thead>
+          <tr>
+            <th class="col-lc-name">Lifecycle Name</th>
+            <th class="col-ar">
+              <span class="th-dot th-dot--ar"></span>
+              Archive Request
+            </th>
+            <th class="col-ir">
+              <span class="th-dot th-dot--ir"></span>
+              Insert Request
+            </th>
+            <th class="col-dr">
+              <span class="th-dot th-dot--dr"></span>
+              Delete Request
+            </th>
+            <th class="col-rule">Delete Rule</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody id="composer-body">
+          <tr><td colspan="6" class="loading-cell">Loading objects from Optim catalog…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Saved Lifecycles -->
+    <div class="saved-section">
+      <div class="saved-header">
+        <span class="saved-title">Saved Lifecycle Definitions</span>
+        <span class="saved-count" id="saved-count">0 lifecycles</span>
+      </div>
+      <div id="saved-list" class="saved-list">
+        <div class="saved-empty">No lifecycle definitions saved yet.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="js/composer.js"></script>
+</body>
+</html>
