@@ -1,27 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Lifecycle Definition</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryonix — Lifecycle Definition</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/defn.css" />
 </head>
 <body>
-    <pre id="output">Loading...</pre>
 
-    <script>
-        // Get lifecycle ID from URL
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get("id");
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <span class="brand-name">Cryonix</span>
+        <span class="brand-sub">Data Lifecycle Orchestration</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="server-status">
+        <span class="status-dot"></span>
+        OPTIM SERVER · CONNECTED
+      </span>
+    </div>
+  </header>
 
-        // Fetch filtered JSON from backend
-        fetch(`/api/v1/lifecycle/definition/${id}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("output").textContent =
-                    JSON.stringify(data, null, 4);
-            })
-            .catch(err => {
-                document.getElementById("output").textContent =
-                    "Error loading definition: " + err;
-            });
-    </script>
+  <div class="defn-container">
+
+    <div class="defn-nav">
+      <a href="/" class="back-link">← Lifecycle Monitor</a>
+      <span class="read-only-badge">READ ONLY</span>
+    </div>
+
+    <!-- Loading state -->
+    <div id="defn-loading" class="defn-loading">Loading definition…</div>
+
+    <!-- Error state -->
+    <div id="defn-error" class="defn-error" style="display:none">
+      <div class="defn-error-icon">⚠</div>
+      <div id="defn-error-msg">Definition not found.</div>
+    </div>
+
+    <!-- Main content -->
+    <div id="defn-content" style="display:none">
+
+      <!-- Lifecycle Header -->
+      <div class="lc-header">
+        <div class="lc-header-left">
+          <div class="lc-header-id" id="lc-id">—</div>
+          <div class="lc-header-name" id="lc-name">—</div>
+          <div class="lc-header-desc" id="lc-desc">—</div>
+        </div>
+        <div class="lc-header-right">
+          <div class="lc-meta-row">
+            <span class="lc-meta-label">Last Updated</span>
+            <span class="lc-meta-val" id="lc-updated">—</span>
+          </div>
+          <div class="lc-step-flow" id="lc-step-flow">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Three Operation Cards -->
+      <div class="op-grid">
+
+        <!-- Archive Request -->
+        <div class="op-card op-card--ar">
+          <div class="op-card-header">
+            <div class="op-type-pill op-type-pill--ar">AR</div>
+            <div class="op-card-title">
+              <div class="op-card-type-label">Archive Request</div>
+              <div class="op-card-obj-name" id="ar-name">—</div>
+            </div>
+            <div class="op-checksum" id="ar-checksum">—</div>
+          </div>
+
+          <div class="op-card-body">
+            <div class="op-section">
+              <div class="op-section-title">Summary</div>
+              <div class="kv-grid">
+                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="ar-desc">—</span></div>
+                <div class="kv-row"><span class="kv-key">Last Updated</span><span class="kv-val" id="ar-updated">—</span></div>
+                <div class="kv-row"><span class="kv-key">Modified By</span><span class="kv-val mono" id="ar-by">—</span></div>
+                <div class="kv-row"><span class="kv-key">Runtime Override</span><span class="kv-val" id="ar-override">—</span></div>
+              </div>
+            </div>
+
+            <div class="op-section">
+              <div class="op-section-title">Access Definition</div>
+              <div class="kv-grid">
+                <div class="kv-row"><span class="kv-key">Type</span><span class="kv-val" id="ad-type">—</span></div>
+                <div class="kv-row"><span class="kv-key">Name</span><span class="kv-val mono" id="ad-name">—</span></div>
+                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="ad-desc">—</span></div>
+              </div>
+            </div>
+
+            <div class="op-section" id="params-section" style="display:none">
+              <div class="op-section-title">
+                Selection Parameters
+                <span class="section-badge">Determines which rows are archived</span>
+              </div>
+              <table class="params-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Prompt</th>
+                    <th>Default Value</th>
+                  </tr>
+                </thead>
+                <tbody id="params-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insert Request -->
+        <div class="op-card op-card--ir">
+          <div class="op-card-header">
+            <div class="op-type-pill op-type-pill--ir">IR</div>
+            <div class="op-card-title">
+              <div class="op-card-type-label">Insert Request</div>
+              <div class="op-card-obj-name" id="ir-name">—</div>
+            </div>
+            <div class="op-checksum" id="ir-checksum">—</div>
+          </div>
+
+          <div class="op-card-body">
+            <div class="op-section">
+              <div class="op-section-title">Summary</div>
+              <div class="kv-grid">
+                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="ir-desc">—</span></div>
+                <div class="kv-row"><span class="kv-key">Last Updated</span><span class="kv-val" id="ir-updated">—</span></div>
+                <div class="kv-row"><span class="kv-key">Modified By</span><span class="kv-val mono" id="ir-by">—</span></div>
+              </div>
+            </div>
+
+            <div class="op-section" id="ir-files-section" style="display:none">
+              <div class="op-section-title">Files</div>
+              <div class="file-card" id="ir-archive-file"></div>
+              <div class="file-card" id="ir-control-file"></div>
+            </div>
+
+            <div class="op-section" id="ir-tm-section" style="display:none">
+              <div class="op-section-title">Table Map</div>
+              <div class="kv-grid">
+                <div class="kv-row"><span class="kv-key">Type</span><span class="kv-val" id="tm-type">—</span></div>
+                <div class="kv-row"><span class="kv-key">Name</span><span class="kv-val mono" id="tm-name">—</span></div>
+                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="tm-desc">—</span></div>
+                <div class="kv-row" id="tm-updated-row" style="display:none"><span class="kv-key">Last Updated</span><span class="kv-val" id="tm-updated">—</span></div>
+                <div class="kv-row" id="tm-by-row" style="display:none"><span class="kv-key">Modified By</span><span class="kv-val mono" id="tm-by">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delete Request -->
+        <div class="op-card op-card--dr">
+          <div class="op-card-header">
+            <div class="op-type-pill op-type-pill--dr">DR</div>
+            <div class="op-card-title">
+              <div class="op-card-type-label">Delete Request</div>
+              <div class="op-card-obj-name" id="dr-name">—</div>
+            </div>
+            <div class="op-checksum" id="dr-checksum">—</div>
+          </div>
+
+          <div class="op-card-body">
+            <div class="op-section">
+              <div class="op-section-title">Summary</div>
+              <div class="kv-grid">
+                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="dr-desc">—</span></div>
+                <div class="kv-row"><span class="kv-key">Last Updated</span><span class="kv-val" id="dr-updated">—</span></div>
+                <div class="kv-row"><span class="kv-key">Modified By</span><span class="kv-val mono" id="dr-by">—</span></div>
+              </div>
+            </div>
+
+            <div class="op-section" id="dr-files-section" style="display:none">
+              <div class="op-section-title">Files</div>
+              <div class="file-card" id="dr-archive-file"></div>
+              <div class="file-card" id="dr-control-file"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /op-grid -->
+
+    </div><!-- /defn-content -->
+  </div><!-- /defn-container -->
+
+  <script src="js/defn.js"></script>
 </body>
 </html>
