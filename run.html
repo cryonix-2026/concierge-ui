@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryonix — Run</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/run.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <span class="brand-name">Cryonix</span>
+        <span class="brand-sub">Data Lifecycle Orchestration</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <button class="btn-refresh-global" id="btn-refresh" onclick="refresh()">↺ Refresh</button>
+      <span class="server-status"><span class="status-dot"></span>OPTIM SERVER · CONNECTED</span>
+    </div>
+  </header>
+
+  <div class="run-container">
+
+    <div class="run-nav">
+      <a href="/" class="back-link">← Lifecycle Monitor</a>
+      <div class="run-nav-links">
+        <a href="#" id="nav-defn" class="run-nav-link">Definition</a>
+        <a href="#" id="nav-history" class="run-nav-link">History</a>
+      </div>
+    </div>
+
+    <div id="run-loading" class="defn-loading">Loading…</div>
+    <div id="run-error" class="defn-error" style="display:none">
+      <div class="defn-error-icon">⚠</div>
+      <div id="run-error-msg">Lifecycle not found.</div>
+    </div>
+
+    <div id="run-content" style="display:none">
+
+      <!-- Lifecycle Header -->
+      <div class="lc-header">
+        <div class="lc-header-left">
+          <div class="lc-header-id" id="lc-id">—</div>
+          <div class="lc-header-name" id="lc-name">—</div>
+          <div class="lc-header-desc" id="lc-desc">—</div>
+        </div>
+        <div class="lc-header-right">
+          <div class="status-banner" id="status-banner"></div>
+        </div>
+      </div>
+
+      <!-- Step Pipeline -->
+      <div class="run-pipeline" id="run-pipeline"></div>
+
+      <!-- Two column: Left = actions, Right = preceding step context -->
+      <div class="run-layout">
+
+        <!-- LEFT: Next action -->
+        <div class="run-card">
+          <div class="run-card-header" id="action-header">Next Action</div>
+          <div class="run-card-body" id="action-body">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- RIGHT: Preceding step summary -->
+        <div class="run-card" id="context-card" style="display:none">
+          <div class="run-card-header">Preceding Steps</div>
+          <div class="run-card-body" id="context-body"></div>
+        </div>
+
+      </div><!-- /run-layout -->
+
+    </div><!-- /run-content -->
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="js/run.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryonix — History</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/history.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <span class="brand-name">Cryonix</span>
+        <span class="brand-sub">Data Lifecycle Orchestration</span>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="server-status"><span class="status-dot"></span>OPTIM SERVER · CONNECTED</span>
+    </div>
+  </header>
+
+  <div class="history-container">
+
+    <div class="history-nav">
+      <a href="/" class="back-link">← Lifecycle Monitor</a>
+      <a href="#" id="nav-run" class="run-nav-link">Run</a>
+    </div>
+
+    <!-- Header + filters -->
+    <div class="history-header">
+      <div>
+        <h1 class="title">Execution History</h1>
+        <p class="subtitle" id="history-subtitle">All lifecycle runs, latest first</p>
+      </div>
+      <div class="history-controls">
+        <div class="filter-wrap">
+          <input type="text" id="lc-filter" class="filter-input"
+            placeholder="Filter by lifecycle ID…" autocomplete="off" />
+          <div class="filter-dropdown" id="filter-dropdown" style="display:none"></div>
+        </div>
+        <button class="btn-export" id="btn-export" onclick="exportCsv()">↓ Export CSV</button>
+      </div>
+    </div>
+
+    <div id="history-loading" class="hist-loading">Loading history…</div>
+
+    <!-- History table -->
+    <div class="table-wrap" id="history-table-wrap" style="display:none">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th class="col-start">Started</th>
+            <th class="col-end">Closed</th>
+            <th class="col-ar">Archive Report</th>
+            <th class="col-ir">Insert Report</th>
+            <th class="col-dr">Delete Report</th>
+            <th class="col-status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+
+    <div id="history-empty" class="hist-empty" style="display:none">
+      No history found for this lifecycle.
+    </div>
+
+  </div>
+
+  <script src="js/history.js"></script>
+</body>
+</html>

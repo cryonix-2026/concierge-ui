@@ -1,49 +1,50 @@
 /**
- * composer.js
+ * composer.js — Lifecycle Composer
  *
- * Lifecycle Composer — pairs Archive Requests with Insert and Delete operations.
- *
- * Data sources:
- *   GET /api/v1/objects?type=V  → archive requests
- *   GET /api/v1/objects?type=I  → insert requests
- *   GET /api/v1/objects?type=D  → delete requests
- *   POST /api/v1/lifecycle/compose → save a lifecycle definition
- *
- * Falls back to embedded mock data if API is unavailable (demo mode).
+ * - One row per Archive Request
+ * - When saved: row collapses to a "Saved" state with Clone and View Definition buttons
+ * - Clone: creates a fresh editable row with the same AR, allowing different name/IR/DR
+ * - Saves to YAML via POST /api/v1/lifecycle/compose
+ * - Reads saved definitions from GET /api/v1/lifecycle/definitions
  */
 
-// ─── Mock data (mirrors what MetadataService produces) ───────────────────────
-const MOCK_ARCHIVES = [
-  { obj_id: "PSTDEMO", obj_name: "AR_W_LOCALAD", description: "AR With LOCAL AD",               last_updated: "2026-04-13", modified_by: "schag" },
-  { obj_id: "PSTDEMO", obj_name: "SAMPLE_AR",    description: "Archive for Sample Data - Oracle DB", last_updated: "2026-04-13", modified_by: "schag" },
-];
-const MOCK_INSERTS = [
-  { obj_id: "PSTDEMO", obj_name: "NAMED_IR",  description: "SAMPLE IR with Named TM", last_updated: "2026-04-19", modified_by: "schag" },
-  { obj_id: "PSTDEMO", obj_name: "SAMPLE_IR", description: "Insert Request Sample",   last_updated: "2026-04-19", modified_by: "schag" },
-];
-const MOCK_DELETES = [
-  { obj_id: "PSTDEMO", obj_name: "CRTL_FILE_D", description: "Test Delete Control File", last_updated: "2026-04-19", modified_by: "schag" },
-  { obj_id: "PSTDEMO", obj_name: "SAMPLE_DR",   description: "Test Delete",              last_updated: "2026-04-19", modified_by: "schag" },
-];
+// ─── Mock fallback ────────────────────────────────────────────────────────────
+const MOCK = {
+  ARCHIVE: [
+    { obj_id: "PSTDEMO", obj_name: "AR_W_LOCALAD", description: "AR With LOCAL AD" },
+    { obj_id: "PSTDEMO", obj_name: "SAMPLE_AR",    description: "Archive for Sample Data - Oracle DB" },
+  ],
+  INSERT: [
+    { obj_id: "PSTDEMO", obj_name: "NAMED_IR",  description: "SAMPLE IR with Named TM" },
+    { obj_id: "PSTDEMO", obj_name: "SAMPLE_IR", description: "Insert Request Sample" },
+  ],
+  DELETE: [
+    { obj_id: "PSTDEMO", obj_name: "CRTL_FILE_D", description: "Test Delete Control File" },
+    { obj_id: "PSTDEMO", obj_name: "SAMPLE_DR",   description: "Test Delete" },
+  ],
+};
 
-// ─── State ────────────────────────────────────────────────────────────────────
 let archives = [];
 let inserts  = [];
 let deletes  = [];
-let savedLifecycles = loadSaved();
 
-// ─── API helpers ──────────────────────────────────────────────────────────────
-async function fetchObjects(type) {
+// saved[arFullName] = array of saved lifecycle IDs using that AR
+// Used to decide which rows to show as "saved" vs "fresh"
+let savedByAr = {};
+
+// ─── Fetch helpers ────────────────────────────────────────────────────────────
+async function fetchType(type) {
   try {
-    const res = await fetch(`/api/v1/objects?type=${type}`);
-    if (!res.ok) throw new Error("API unavailable");
-    return await res.json();
+    const res = await fetch(`/api/v1/requests/${type}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    return data.map(d => ({
+      obj_id:      d.obj_id || d.name?.split(".")?.[0] || "",
+      obj_name:    d.obj_name || d.name?.split(".")?.[1] || d.name || "",
+      description: d.description || "",
+    }));
   } catch {
-    // Demo fallback
-    if (type === "V") return MOCK_ARCHIVES;
-    if (type === "I") return MOCK_INSERTS;
-    if (type === "D") return MOCK_DELETES;
-    return [];
+    return MOCK[type] || [];
   }
 }
 
@@ -56,297 +57,258 @@ async function saveToApi(lifecycle) {
     });
     return res.ok;
   } catch {
-    return false; // Demo mode — save locally only
+    return false;
   }
 }
 
-// ─── Local persistence (demo) ─────────────────────────────────────────────────
-function loadSaved() {
+async function loadSaved() {
   try {
-    return JSON.parse(localStorage.getItem("cryonix_lifecycles") || "[]");
-  } catch { return []; }
+    const res = await fetch("/api/v1/lifecycle/definitions");
+    if (!res.ok) throw new Error();
+    return await res.json();
+  } catch {
+    return [];
+  }
 }
-function persistSaved() {
-  localStorage.setItem("cryonix_lifecycles", JSON.stringify(savedLifecycles));
-}
-function nextLifecycleId() {
-  if (savedLifecycles.length === 0) return "LF01";
-  const nums = savedLifecycles
-    .map(lc => parseInt((lc.lifecycle_id || "LF00").replace("LF", ""), 10))
+
+async function nextId(existing) {
+  const nums = existing
+    .map(lc => parseInt((lc.id || "LF00").replace("LF", ""), 10))
     .filter(n => !isNaN(n));
-  const max = Math.max(0, ...nums);
+  const max = nums.length ? Math.max(...nums) : 0;
   return `LF${String(max + 1).padStart(2, "0")}`;
 }
 
-// ─── Dropdown builder ─────────────────────────────────────────────────────────
-function buildDropdown(items, cssClass, selectedName = "") {
+// ─── Dropdown HTML ────────────────────────────────────────────────────────────
+function selectHtml(items, cssClass, selectId) {
   const opts = items.map(item => {
     const fullName = `${item.obj_id}.${item.obj_name}`;
-    const selected = fullName === selectedName ? " selected" : "";
-    return `<option value="${fullName}" title="${item.description}"${selected}>
-      ${item.obj_name}
-    </option>`;
+    const label    = item.obj_name + (item.description ? ` — ${item.description}` : "");
+    return `<option value="${fullName}">${label}</option>`;
   }).join("");
-  return `<select class="op-select ${cssClass}">${opts}</select>`;
+  return `<select class="op-select ${cssClass}" id="${selectId}">${opts}</select>`;
 }
 
-// ─── Step order indicator ─────────────────────────────────────────────────────
-function stepOrderHtml(deleteRule) {
-  if (deleteRule) {
-    // Insert must complete before Delete
-    return `
-      <div class="step-order">
-        <span class="step-pill ar">Archive</span>
-        <span class="step-arrow">→</span>
-        <span class="step-pill ir">Insert</span>
-        <span class="step-arrow">→</span>
-        <span class="step-pill dr">Delete</span>
-        <span class="step-arrow">→</span>
-        <span class="step-pill val">Validate</span>
-      </div>`;
-  }
-  return `
-    <div class="step-order">
-      <span class="step-pill ar">Archive</span>
-      <span class="step-arrow">→</span>
-      <span class="step-pill ir">Insert</span>
-      <span class="step-arrow">/</span>
-      <span class="step-pill dr">Delete</span>
-      <span class="step-arrow">→</span>
-      <span class="step-pill val">Validate</span>
-    </div>`;
-}
-
-// ─── Render composer table ────────────────────────────────────────────────────
-function renderComposerTable() {
+// ─── Render table ─────────────────────────────────────────────────────────────
+function renderTable(saved) {
   const tbody = document.getElementById("composer-body");
-
-  if (archives.length === 0) {
+  if (!archives.length) {
     tbody.innerHTML = `<tr><td colspan="6" class="loading-cell">No archive requests found in Optim catalog.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = archives.map((ar, idx) => {
-    const arFullName = `${ar.obj_id}.${ar.obj_name}`;
-    return `
-      <tr data-idx="${idx}">
-        <td>
-          <input
-            type="text"
-            class="lc-name-input"
-            placeholder="e.g. Customer Archive Q1"
-            data-ar="${arFullName}"
-            id="lc-name-${idx}"
-          />
-        </td>
+  // Build set of saved AR names (first occurrence only — allow cloning)
+  // Each AR gets one fresh row. Saved rows are collapsed.
+  // Rows are keyed by rowKey = `${arFullName}-${rowIndex}`
+  const rows = getDisplayRows(saved);
 
+  tbody.innerHTML = rows.map((row, idx) => renderRow(row, idx)).join("");
+  wireRowEvents();
+}
+
+function getDisplayRows(saved) {
+  // Start with one row per archive. For each saved entry, record it.
+  // Extra rows come from cloning.
+  const baseRows = archives.map(ar => ({
+    ar,
+    arFullName: `${ar.obj_id}.${ar.obj_name}`,
+    savedAs:    null,
+    rowKey:     `${ar.obj_id}.${ar.obj_name}-0`,
+  }));
+
+  // Mark base rows that have been saved
+  saved.forEach(lc => {
+    const arName = lc.archive_request;
+    const base = baseRows.find(r => r.arFullName === arName && !r.savedAs);
+    if (base) base.savedAs = lc;
+  });
+
+  return baseRows;
+}
+
+function renderRow(row, idx) {
+  const { ar, arFullName, savedAs } = row;
+
+  if (savedAs) {
+    // Collapsed saved row
+    return `
+      <tr data-idx="${idx}" data-ar="${arFullName}" class="row-saved">
+        <td>
+          <div class="saved-inline">
+            <span class="saved-inline-id">${savedAs.id}</span>
+            <span class="saved-inline-name">${savedAs.name}</span>
+            <span class="saved-inline-badge">✓ Saved</span>
+          </div>
+        </td>
         <td>
           <div class="ar-cell">
             <div class="ar-name">${arFullName}</div>
-            <div class="ar-desc">${ar.description || ""}</div>
-            <div id="step-order-${idx}">${stepOrderHtml(false)}</div>
+            ${ar.description ? `<div class="ar-desc">${ar.description}</div>` : ""}
           </div>
         </td>
-
-        <td>
-          ${buildDropdown(inserts, "ir-select", "", )}
-        </td>
-
-        <td>
-          ${buildDropdown(deletes, "dr-select", "")}
-        </td>
-
+        <td class="saved-op-cell"><span class="saved-op-pill pill-ir">${savedAs.insert_request?.split(".")?.[1] || savedAs.insert_request}</span></td>
+        <td class="saved-op-cell"><span class="saved-op-pill pill-dr">${savedAs.delete_request?.split(".")?.[1] || savedAs.delete_request}</span></td>
         <td class="col-rule">
-          <div class="rule-toggle-wrap">
-            <label class="rule-toggle" title="When enabled: Delete only proceeds after Insert completes">
-              <input type="checkbox" class="delete-rule-chk" data-idx="${idx}" />
-              <span class="rule-slider"></span>
-            </label>
-            <span class="rule-label" id="rule-label-${idx}">OFF</span>
-            <div class="rule-hint" id="rule-hint-${idx}">Independent</div>
-          </div>
+          <span style="font-size:10px;color:${savedAs.insert_before_delete ? "#7c3aed" : "#94a3b8"}">
+            ${savedAs.insert_before_delete ? "ON" : "OFF"}
+          </span>
         </td>
-
-        <td class="col-action">
-          <button class="btn-save" data-idx="${idx}" id="btn-save-${idx}">
-            Save
-          </button>
+        <td class="col-action" style="display:flex;gap:6px;justify-content:flex-end;">
+          <a class="btn-view-small" href="defn.html?id=${savedAs.id}" target="_blank">View</a>
+          <button class="btn-clone" data-ar="${arFullName}" data-idx="${idx}">Clone</button>
         </td>
       </tr>
     `;
-  }).join("");
+  }
 
-  // Wire up delete rule toggles
-  document.querySelectorAll(".delete-rule-chk").forEach(chk => {
-    chk.addEventListener("change", (e) => {
-      const idx = e.target.dataset.idx;
-      const checked = e.target.checked;
-      const label = document.getElementById(`rule-label-${idx}`);
-      const hint  = document.getElementById(`rule-hint-${idx}`);
-      const order = document.getElementById(`step-order-${idx}`);
-
-      label.textContent = checked ? "ON" : "OFF";
-      label.className   = checked ? "rule-label active" : "rule-label";
-      hint.textContent  = checked ? "Insert → Delete" : "Independent";
-      hint.className    = checked ? "rule-hint active" : "rule-hint";
-      order.innerHTML   = stepOrderHtml(checked);
-    });
-  });
-
-  // Wire up save buttons
-  document.querySelectorAll(".btn-save").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      handleSave(parseInt(e.target.dataset.idx, 10));
-    });
-  });
-
-  // Enable/disable save based on name input
-  document.querySelectorAll(".lc-name-input").forEach(input => {
-    input.addEventListener("input", (e) => {
-      const idx = archives.indexOf(
-        archives.find(a => `${a.obj_id}.${a.obj_name}` === e.target.dataset.ar)
-      );
-      const btn = document.getElementById(`btn-save-${idx}`);
-      if (btn) btn.disabled = e.target.value.trim() === "";
-    });
-  });
-
-  // Initially disable all save buttons until name is entered
-  document.querySelectorAll(".btn-save").forEach(btn => { btn.disabled = true; });
+  // Fresh editable row
+  return `
+    <tr data-idx="${idx}" data-ar="${arFullName}" class="row-fresh">
+      <td>
+        <input type="text" class="lc-name-input" id="lc-name-${idx}"
+          placeholder="e.g. Customer Archive Q1" />
+      </td>
+      <td>
+        <div class="ar-cell">
+          <div class="ar-name">${arFullName}</div>
+          ${ar.description ? `<div class="ar-desc">${ar.description}</div>` : ""}
+        </div>
+      </td>
+      <td>${selectHtml(inserts, "ir-select", `ir-sel-${idx}`)}</td>
+      <td>${selectHtml(deletes, "dr-select", `dr-sel-${idx}`)}</td>
+      <td class="col-rule">
+        <div class="rule-toggle-wrap">
+          <label class="rule-toggle">
+            <input type="checkbox" class="delete-rule-chk" id="rule-${idx}" />
+            <span class="rule-slider"></span>
+          </label>
+          <span class="rule-label" id="rule-label-${idx}">OFF</span>
+        </div>
+      </td>
+      <td class="col-action">
+        <button class="btn-save" id="btn-save-${idx}" data-idx="${idx}" disabled>Save</button>
+      </td>
+    </tr>
+  `;
 }
 
-// ─── Handle save ──────────────────────────────────────────────────────────────
+function wireRowEvents() {
+  // Delete rule toggles
+  document.querySelectorAll(".delete-rule-chk").forEach(chk => {
+    const row  = chk.closest("tr");
+    const idx  = row?.dataset.idx;
+    const label = idx ? document.getElementById(`rule-label-${idx}`) : null;
+    chk.addEventListener("change", () => {
+      if (label) { label.textContent = chk.checked ? "ON" : "OFF"; label.className = chk.checked ? "rule-label active" : "rule-label"; }
+    });
+  });
+
+  // Name inputs enable save button
+  document.querySelectorAll(".lc-name-input").forEach(input => {
+    const row = input.closest("tr");
+    const idx = row?.dataset.idx;
+    const btn = idx ? document.getElementById(`btn-save-${idx}`) : null;
+    input.addEventListener("input", () => {
+      if (btn) btn.disabled = input.value.trim() === "";
+    });
+  });
+
+  // Save buttons
+  document.querySelectorAll(".btn-save[data-idx]").forEach(btn => {
+    btn.addEventListener("click", () => handleSave(parseInt(btn.dataset.idx, 10)));
+  });
+
+  // Clone buttons
+  document.querySelectorAll(".btn-clone[data-ar]").forEach(btn => {
+    btn.addEventListener("click", () => handleClone(btn.dataset.ar, btn.dataset.idx));
+  });
+}
+
+// ─── Save ─────────────────────────────────────────────────────────────────────
 async function handleSave(idx) {
-  const ar = archives[idx];
-  const row = document.querySelector(`tr[data-idx="${idx}"]`);
+  const row     = document.querySelector(`tr[data-idx="${idx}"]`);
+  const nameEl  = document.getElementById(`lc-name-${idx}`);
+  const irEl    = document.getElementById(`ir-sel-${idx}`);
+  const drEl    = document.getElementById(`dr-sel-${idx}`);
+  const ruleEl  = document.getElementById(`rule-${idx}`);
+  const saveBtn = document.getElementById(`btn-save-${idx}`);
+  const arName  = row?.dataset.ar;
 
-  const nameInput  = document.getElementById(`lc-name-${idx}`);
-  const irSelect   = row.querySelectorAll(".ir-select")[0];
-  const drSelect   = row.querySelectorAll(".dr-select")[0];
-  const ruleChk    = row.querySelector(".delete-rule-chk");
-  const saveBtn    = document.getElementById(`btn-save-${idx}`);
+  if (!nameEl || !nameEl.value.trim()) { showToast("Please enter a lifecycle name.", "error"); return; }
 
-  const lcName    = nameInput.value.trim();
-  const irName    = irSelect.value;
-  const drName    = drSelect.value;
-  const deleteRule = ruleChk.checked;
-
-  if (!lcName) {
-    showToast("Please enter a lifecycle name.", "error");
-    nameInput.focus();
-    return;
-  }
-
-  // Check for duplicate lifecycle names
-  if (savedLifecycles.some(lc => lc.lifecycle_name.toLowerCase() === lcName.toLowerCase())) {
-    showToast("A lifecycle with that name already exists.", "error");
-    return;
-  }
-
-  const arObj = archives[idx];
-  const irObj = inserts.find(i => `${i.obj_id}.${i.obj_name}` === irName);
-  const drObj = deletes.find(d => `${d.obj_id}.${d.obj_name}` === drName);
+  const existing = await loadSaved();
+  const lcId     = await nextId(existing);
 
   const lifecycle = {
-    lifecycle_id:   nextLifecycleId(),
-    lifecycle_name: lcName,
-    description:    `Lifecycle: ${ar.obj_name} → ${irObj?.obj_name || irName} → ${drObj?.obj_name || drName}`,
-    delete_rule:    deleteRule,
-    step_order:     deleteRule
-      ? ["archive", "insert", "delete", "validate"]
-      : ["archive", "insert", "delete", "validate"],
-    created_at:     new Date().toISOString(),
-    archive_request: {
-      obj_id:      arObj.obj_id,
-      obj_name:    arObj.obj_name,
-      description: arObj.description,
-    },
-    insert_request: {
-      obj_id:      irObj?.obj_id || "",
-      obj_name:    irObj?.obj_name || irName,
-      description: irObj?.description || "",
-    },
-    delete_request: {
-      obj_id:      drObj?.obj_id || "",
-      obj_name:    drObj?.obj_name || drName,
-      description: drObj?.description || "",
-    },
+    id:                   lcId,
+    name:                 nameEl.value.trim(),
+    description:          `Lifecycle: ${arName?.split(".")?.[1] || arName}`,
+    archive_request:      arName,
+    insert_request:       irEl?.value || "",
+    delete_request:       drEl?.value || "",
+    insert_before_delete: ruleEl?.checked || false,
+    parameter_file:       `C:\\cryonix\\params\\${lcId.toLowerCase()}_param.txt`,
+    reports_directory:    `C:\\optim_reports\\${lcId.toLowerCase()}`,
   };
 
-  // Try API save, fall back to local
-  const apiOk = await saveToApi(lifecycle);
-  savedLifecycles.push(lifecycle);
-  persistSaved();
-
-  // Update UI
-  saveBtn.textContent = "✓ Saved";
-  saveBtn.className = "btn-save saved";
-  saveBtn.disabled = true;
-  nameInput.disabled = true;
-  irSelect.disabled = true;
-  drSelect.disabled = true;
-  ruleChk.disabled = true;
-
-  showToast(`"${lcName}" saved as ${lifecycle.lifecycle_id}`, "success");
-  renderSavedList();
+  await saveToApi(lifecycle);
+  showToast(`"${lifecycle.name}" saved as ${lcId}`, "success");
+  await refresh();
 }
 
-// ─── Render saved lifecycles ──────────────────────────────────────────────────
-function renderSavedList() {
+// ─── Clone ────────────────────────────────────────────────────────────────────
+async function handleClone(arFullName, idx) {
+  // Insert a fresh editable row immediately after the saved row
+  const savedRow = document.querySelector(`tr[data-idx="${idx}"]`);
+  if (!savedRow) return;
+
+  const ar = archives.find(a => `${a.obj_id}.${a.obj_name}` === arFullName);
+  if (!ar) return;
+
+  const cloneIdx = `clone-${Date.now()}`;
+  const cloneHtml = renderRow({ ar, arFullName, savedAs: null }, cloneIdx);
+
+  const tempDiv = document.createElement("tbody");
+  tempDiv.innerHTML = cloneHtml;
+  const newRow = tempDiv.firstElementChild;
+  newRow.dataset.idx = cloneIdx;
+  newRow.classList.add("row-clone");
+
+  savedRow.after(newRow);
+  wireRowEvents();
+  newRow.querySelector(".lc-name-input")?.focus();
+  showToast("Row cloned — give it a new name and save.", "");
+}
+
+// ─── Saved list ───────────────────────────────────────────────────────────────
+async function renderSavedList(saved) {
   const container = document.getElementById("saved-list");
   const countEl   = document.getElementById("saved-count");
+  countEl.textContent = `${saved.length} lifecycle${saved.length !== 1 ? "s" : ""}`;
 
-  countEl.textContent = `${savedLifecycles.length} lifecycle${savedLifecycles.length !== 1 ? "s" : ""}`;
-
-  if (savedLifecycles.length === 0) {
+  if (!saved.length) {
     container.innerHTML = `<div class="saved-empty">No lifecycle definitions saved yet.</div>`;
     return;
   }
 
-  container.innerHTML = savedLifecycles.map((lc, idx) => `
+  container.innerHTML = saved.map(lc => `
     <div class="saved-card">
-      <div class="saved-card-id">${lc.lifecycle_id}</div>
-      <div>
-        <div class="saved-card-name">${lc.lifecycle_name}</div>
-        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${lc.description}</div>
+      <div class="saved-card-id">${lc.id || "—"}</div>
+      <div style="flex:1">
+        <div class="saved-card-name">${lc.name}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${lc.description || ""}</div>
       </div>
       <div class="saved-card-ops">
-        <span class="saved-op-pill pill-ar" title="${lc.archive_request.obj_name}">
-          AR: ${lc.archive_request.obj_name}
-        </span>
-        <span class="saved-op-pill pill-ir" title="${lc.insert_request.obj_name}">
-          IR: ${lc.insert_request.obj_name}
-        </span>
-        <span class="saved-op-pill pill-dr" title="${lc.delete_request.obj_name}">
-          DR: ${lc.delete_request.obj_name}
-        </span>
+        <span class="saved-op-pill pill-ar">AR: ${lc.archive_request?.split(".")?.[1] || lc.archive_request}</span>
+        <span class="saved-op-pill pill-ir">IR: ${lc.insert_request?.split(".")?.[1] || lc.insert_request}</span>
+        <span class="saved-op-pill pill-dr">DR: ${lc.delete_request?.split(".")?.[1] || lc.delete_request}</span>
       </div>
-      ${lc.delete_rule
-        ? `<span class="saved-card-rule">Insert → Delete enforced</span>`
-        : ""}
+      ${lc.insert_before_delete ? `<span class="saved-card-rule">Insert → Delete</span>` : ""}
       <div class="saved-card-actions">
-        <a class="btn-view-defn"
-           href="defn.html?id=${lc.lifecycle_id}"
-           target="_blank">
-          View Definition
-        </a>
-        <button class="btn-delete-saved" data-idx="${idx}">Remove</button>
+        <a class="btn-view-defn" href="defn.html?id=${lc.id}" target="_blank">View Definition</a>
       </div>
     </div>
   `).join("");
-
-  // Wire remove buttons
-  container.querySelectorAll(".btn-delete-saved").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const i = parseInt(e.target.dataset.idx, 10);
-      const name = savedLifecycles[i].lifecycle_name;
-      savedLifecycles.splice(i, 1);
-      persistSaved();
-      renderComposerTable();
-      renderSavedList();
-      showToast(`"${name}" removed.`);
-    });
-  });
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -357,15 +319,21 @@ function showToast(msg, type = "") {
   setTimeout(() => { toast.className = "toast"; }, 3000);
 }
 
+// ─── Refresh ──────────────────────────────────────────────────────────────────
+async function refresh() {
+  const saved = await loadSaved();
+  renderTable(saved);
+  renderSavedList(saved);
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   [archives, inserts, deletes] = await Promise.all([
-    fetchObjects("V"),
-    fetchObjects("I"),
-    fetchObjects("D"),
+    fetchType("ARCHIVE"),
+    fetchType("INSERT"),
+    fetchType("DELETE"),
   ]);
-  renderComposerTable();
-  renderSavedList();
+  await refresh();
 }
 
 init();

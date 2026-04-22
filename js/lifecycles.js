@@ -3,90 +3,91 @@ import { fetchLifecycleStatus } from "./api.js";
 const tbody = document.getElementById("lifecycle-body");
 
 const dotClass = {
-  completed: "green",
+  completed:   "green",
   in_progress: "blue",
-  pending: "gray",
-  failed: "red"
+  pending:     "gray",
+  failed:      "red"
 };
 
-function formatTime(ts) {
+function formatDateTime(ts) {
   if (!ts) return "";
   const d = new Date(ts);
-  return d.toLocaleString();
+  if (isNaN(d)) return ts;
+  return d.toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric"
+  }) + "<br>" + d.toLocaleTimeString("en-US", {
+    hour: "2-digit", minute: "2-digit"
+  });
 }
 
-function renderWorkflow(steps, lifecycleId) {
+function renderWorkflow(steps) {
   const order = ["archive", "insert", "delete", "completion"];
-
   return `
     <div class="workflow">
       <div class="workflow-line"></div>
-      ${order
-        .map(
-          step => `
+      ${order.map(step => `
         <div class="step">
-          <div class="dot ${dotClass[steps[step]]}"></div>
+          <div class="dot ${dotClass[steps[step]] || "gray"}"></div>
           <div class="label">${step.charAt(0).toUpperCase() + step.slice(1)}</div>
         </div>`
-        )
-        .join("")}
-    </div>
-
-    <div class="workflow-actions-bar">
-      <a href="#">Details</a>
-      <a href="/concierge-ui/defn.html?id=${lifecycleId}" target="_blank">Definition</a>
-      <a href="#">Run</a>
-      <a href="#">History</a>
+      ).join("")}
     </div>
   `;
 }
 
-/* function renderWorkflow(steps) {
-  console.log("renderWorkflow called with:", steps);
-  return "TEST";
-} */
-
+function renderActions(lifecycleId) {
+  return `
+    <div class="workflow-actions-bar">
+      <a href="/concierge-ui/defn.html?id=${lifecycleId}" target="_blank">Definition</a>
+      <a href="/concierge-ui/run.html?id=${lifecycleId}">Run</a>
+      <a href="/concierge-ui/history.html?id=${lifecycleId}">History</a>
+    </div>
+  `;
+}
 
 function computeSortKey(item) {
-  const status = item.status;
-
-  if (status === "in_progress") return 0;
-  if (status === "completed") return 1;
-  if (status === "completed_externally") return 1;
-  if (status === "closed_incomplete") return 2;
+  const s = item.status;
+  if (s === "in_progress" || s === "submitted") return 0;
+  if (s === "completed" || s === "completed_externally") return 1;
+  if (s === "closed_incomplete") return 2;
   return 3;
 }
 
 async function loadLifecycles() {
-  const data = await fetchLifecycleStatus();
+  try {
+    const data = await fetchLifecycleStatus();
 
-  data.sort((a, b) => {
-    const keyA = computeSortKey(a);
-    const keyB = computeSortKey(b);
+    data.sort((a, b) => {
+      const ka = computeSortKey(a), kb = computeSortKey(b);
+      if (ka !== kb) return ka - kb;
+      return new Date(b.started_at) - new Date(a.started_at);
+    });
 
-    if (keyA !== keyB) return keyA - keyB;
-
-    const tA = new Date(a.started_at).getTime();
-    const tB = new Date(b.started_at).getTime();
-    return tB - tA;
-  });
-
-  tbody.innerHTML = data
-  .map(
-    item => `
+    tbody.innerHTML = data.map(item => `
       <tr>
-        <td>${item.lifecycle_id}</td>
-        <td>${renderWorkflow(item.steps, item.lifecycle_id)}</td>
-        <td>${formatTime(item.started_at)}</td>
-        <td>${formatTime(item.closed_at)}</td>
+        <td>
+          <div class="lc-cell">
+            <div class="lc-id">${item.lifecycle_id}</div>
+            <div class="lc-name">${item.lifecycle_name || item.lifecycle_id}</div>
+            ${item.description ? `<div class="lc-desc">${item.description}</div>` : ""}
+          </div>
+        </td>
+        <td>
+          ${renderWorkflow(item.steps)}
+          ${renderActions(item.lifecycle_id)}
+        </td>
+        <td class="date-cell">
+          ${item.started_at ? formatDateTime(item.started_at) : "—"}
+        </td>
+        <td class="date-cell">
+          ${item.closed_at ? formatDateTime(item.closed_at) : item.status === "in_progress" ? "<span style='color:#2563eb;font-size:10px;'>In progress…</span>" : "—"}
+        </td>
       </tr>
-    `
-  )
-  .join("");
+    `).join("");
 
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" class="loading-cell">Error loading lifecycles: ${err.message}</td></tr>`;
+  }
 }
 
 loadLifecycles();
-
-
-

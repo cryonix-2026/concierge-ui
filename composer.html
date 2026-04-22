@@ -18,45 +18,33 @@
       </div>
     </div>
     <div class="header-meta">
-      <span class="server-status">
-        <span class="status-dot"></span>
-        OPTIM SERVER · CONNECTED
-      </span>
+      <span class="server-status"><span class="status-dot"></span>OPTIM SERVER · CONNECTED</span>
     </div>
   </header>
 
   <div class="container">
-
     <div class="page-header">
       <div>
         <h1 class="title">Lifecycle Composer</h1>
-        <p class="subtitle">
-          Compose archive, insert, and delete operations into named lifecycle definitions.
-          Each archive request is the starting point — pair it with an insert and delete operation.
-        </p>
+        <p class="subtitle">Bind Archive, Insert, and Delete operations into a named lifecycle definition.</p>
       </div>
       <div class="page-actions">
-        <a href="../index.html" class="back-link-inline">← Monitor</a>
+        <a href="/" class="back-link-inline">← Monitor</a>
       </div>
     </div>
 
-    <!-- Legend -->
-    <div class="composer-legend">
-      <div class="legend-item">
-        <span class="legend-dot legend-ar"></span>
-        <span>Archive Request — defines what data is selected</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot legend-ir"></span>
-        <span>Insert Request — restores data to a target environment</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot legend-dr"></span>
-        <span>Delete Request — removes data from source</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-dot legend-rule"></span>
-        <span>Delete Rule — when enabled, delete only proceeds after insert completes</span>
+    <!-- Step flow — once in header -->
+    <div class="composer-flow-header">
+      <div class="flow-step flow-step--ar"><div class="flow-step-dot"></div><div class="flow-step-label">Archive</div><div class="flow-step-hint">Selects rows</div></div>
+      <div class="flow-connector">→</div>
+      <div class="flow-step flow-step--ir"><div class="flow-step-dot"></div><div class="flow-step-label">Insert</div><div class="flow-step-hint">Restores to target</div></div>
+      <div class="flow-connector">→</div>
+      <div class="flow-step flow-step--dr"><div class="flow-step-dot"></div><div class="flow-step-label">Delete</div><div class="flow-step-hint">Removes from source</div></div>
+      <div class="flow-connector">→</div>
+      <div class="flow-step flow-step--val"><div class="flow-step-dot"></div><div class="flow-step-label">Validate</div><div class="flow-step-hint">Confirms completion</div></div>
+      <div class="flow-rule-note">
+        <span class="rule-note-icon">ℹ</span>
+        Enable <strong>Insert → Delete Rule</strong> to enforce Insert completes before Delete is triggered
       </div>
     </div>
 
@@ -66,19 +54,10 @@
         <thead>
           <tr>
             <th class="col-lc-name">Lifecycle Name</th>
-            <th class="col-ar">
-              <span class="th-dot th-dot--ar"></span>
-              Archive Request
-            </th>
-            <th class="col-ir">
-              <span class="th-dot th-dot--ir"></span>
-              Insert Request
-            </th>
-            <th class="col-dr">
-              <span class="th-dot th-dot--dr"></span>
-              Delete Request
-            </th>
-            <th class="col-rule">Delete Rule</th>
+            <th class="col-ar"><span class="th-dot th-dot--ar"></span>Archive Request</th>
+            <th class="col-ir"><span class="th-dot th-dot--ir"></span>Insert Request</th>
+            <th class="col-dr"><span class="th-dot th-dot--dr"></span>Delete Request</th>
+            <th class="col-rule">Insert → Delete Rule</th>
             <th class="col-action"></th>
           </tr>
         </thead>
@@ -98,12 +77,9 @@
         <div class="saved-empty">No lifecycle definitions saved yet.</div>
       </div>
     </div>
-
   </div>
 
-  <!-- Toast notification -->
   <div class="toast" id="toast"></div>
-
   <script type="module" src="js/composer.js"></script>
 </body>
 </html>
