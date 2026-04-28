@@ -3,28 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cryonix Lifecycle Monitor</title>
-  <link rel="stylesheet" href="concierge-ui/css/main.css" />
+  <title>Cryonix — Lifecycle Monitor</title>
+  <link rel="stylesheet" href="/concierge-ui/css/main.css" />
 </head>
 <body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <span class="brand-name">Cryonix</span>
+        <span class="brand-sub">Data Lifecycle Orchestration</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-refresh" onclick="window.location.reload()">↺ Refresh</button>
+    </div>
+  </header>
+
   <div class="container">
-    <h1 class="title">Lifecycle Monitor</h1>
 
-    <table class="lifecycle-table">
-      <thead>
-        <tr>
-          <th>Lifecycle</th>
-          <th>Workflow</th>
-          
+    <div class="page-header">
+      <div>
+        <h1 class="title">Lifecycle Monitor</h1>
+        <p class="subtitle">Active and historical data lifecycle definitions</p>
+      </div>
+    </div>
 
-          <th>Started</th>
-          <th>Closed</th>
-        </tr>
-      </thead>
-      <tbody id="lifecycle-body"></tbody>
-    </table>
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e2e8f0;">
+      <table class="lifecycle-table">
+        <thead>
+          <tr>
+            <th>Lifecycle</th>
+            <th>Workflow</th>
+            <th style="text-align:right;padding-right:16px;">Started</th>
+            <th style="text-align:right;padding-right:16px;">Closed</th>
+          </tr>
+        </thead>
+        <tbody id="lifecycle-body">
+          <tr><td colspan="4" class="loading-cell">Loading lifecycles…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
-  <script type="module" src="concierge-ui/js/lifecycles.js"></script>
+  <script type="module" src="/concierge-ui/js/lifecycles.js"></script>
 </body>
 </html>

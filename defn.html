@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cryonix — Lifecycle Definition</title>
-  <link rel="stylesheet" href="css/main.css" />
-  <link rel="stylesheet" href="css/defn.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/concierge-ui/css/main.css" />
+  <link rel="stylesheet" href="/concierge-ui/css/defn.css" />
 </head>
 <body>
 
@@ -17,202 +19,154 @@
         <span class="brand-sub">Data Lifecycle Orchestration</span>
       </div>
     </div>
-    <div class="header-meta">
-      <span class="server-status">
-        <span class="status-dot"></span>
-        OPTIM SERVER · CONNECTED
-      </span>
-    </div>
   </header>
 
   <div class="defn-container">
 
-    <div class="defn-nav">
-      <a href="/" class="back-link">← Lifecycle Monitor</a>
-      <span class="read-only-badge">READ ONLY · OPTIM CATALOG</span>
-    </div>
-
-    <div id="defn-loading" class="defn-loading">Loading definition…</div>
-    <div id="defn-error" class="defn-error" style="display:none">
-      <div class="defn-error-icon">⚠</div>
-      <div id="defn-error-msg">Definition not found.</div>
-    </div>
+    <div id="defn-loading" class="defn-loading">Loading…</div>
+    <div id="defn-error" class="defn-error" style="display:none"><div id="defn-error-msg"></div></div>
 
     <div id="defn-content" style="display:none">
 
-      <!-- Lifecycle Header -->
-      <div class="lc-header">
-        <div class="lc-header-left">
-          <div class="lc-header-id" id="lc-id">—</div>
-          <div class="lc-header-name" id="lc-name">—</div>
-          <div class="lc-header-desc" id="lc-desc">—</div>
+      <!-- Single top bar -->
+      <div class="defn-topbar">
+        <a href="/" class="back-link">← Monitor</a>
+        <div class="defn-lc-identity">
+          <span class="defn-lc-id" id="lc-id">—</span>
+          <span class="defn-lc-name" id="lc-name">—</span>
+          <span class="defn-lc-updated" id="lc-updated"></span>
         </div>
-        <div class="lc-header-right">
-          <div class="lc-meta-row">
-            <span class="lc-meta-label">Last Updated</span>
-            <span class="lc-meta-val" id="lc-updated">—</span>
-          </div>
-          <div class="lc-step-flow">
-            <span class="flow-pill ar">Archive</span>
-            <span class="flow-arrow">→</span>
-            <span class="flow-pill ir">Insert</span>
-            <span class="flow-arrow">→</span>
-            <span class="flow-pill dr">Delete</span>
-            <span class="flow-arrow">→</span>
-            <span class="flow-pill val">Validate</span>
-          </div>
+        <div class="lc-step-flow">
+          <span class="flow-pill ar">Archive</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-pill ir">Insert</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-pill dr">Delete</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-pill co">Complete</span>
         </div>
+        <span class="defn-read-only">READ ONLY</span>
       </div>
 
-      <!-- Two column layout -->
-      <div class="op-layout">
+      <div class="ops-stack">
 
-        <!-- LEFT: Archive -->
-        <div class="op-card op-card--ar">
-          <div class="op-card-header">
-            <div class="op-type-pill op-type-pill--ar">AR</div>
-            <div class="op-card-title">
-              <div class="op-card-type-label">Archive Request</div>
-              <div class="op-card-obj-name" id="ar-name">—</div>
+        <!-- ── ARCHIVE ─────────────────────────────────────────────────── -->
+        <div class="op-band op-band--ar">
+          <div class="op-doc">
+
+            <div class="doc-header">
+              <span class="op-badge op-badge--ar">AR</span>
+              <span class="doc-obj-name" id="ar-name">—</span>
+              <span class="doc-meta" id="ar-meta"></span>
             </div>
-            <div class="op-checksum" id="ar-checksum"></div>
-          </div>
-          <div class="op-card-body">
-            <div class="op-section">
-              <div class="op-section-title">Summary</div>
-              <div class="kv-grid">
-                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="ar-desc">—</span></div>
-                <div class="kv-row"><span class="kv-key">Last Updated</span><span class="kv-val" id="ar-updated">—</span></div>
-                <div class="kv-row"><span class="kv-key">Modified By</span><span class="kv-val mono" id="ar-by">—</span></div>
-                <div class="kv-row"><span class="kv-key">Runtime Override</span><span class="kv-val" id="ar-override">—</span></div>
+
+            <div class="doc-2col">
+              <div class="doc-col">
+                <div class="doc-line"><span class="doc-key">Description</span><span class="doc-val" id="ar-desc">—</span></div>
+                <div class="doc-line"><span class="doc-key">Run Location</span><span class="doc-val" id="ar-run-location">—</span></div>
+                <div class="doc-line" id="ar-server-row" style="display:none"><span class="doc-key">Server</span><span class="doc-val mono" id="ar-server-name">—</span></div>
+              </div>
+              <div class="doc-col">
+                <div class="doc-col-label">Access Definition</div>
+                <div class="doc-line"><span class="doc-key">Type</span><span class="doc-val" id="ad-type">—</span></div>
+                <div class="doc-line"><span class="doc-key">Name</span><span class="doc-val mono" id="ad-name">—</span></div>
+                <div class="doc-line" id="ad-updated-row" style="display:none"><span class="doc-key">Last Updated</span><span class="doc-val" id="ad-updated">—</span></div>
+                <div class="doc-line" id="ad-by-row" style="display:none"><span class="doc-key">Modified By</span><span class="doc-val mono" id="ad-by">—</span></div>
               </div>
             </div>
 
-            <div class="op-section">
-              <div class="op-section-title">Access Definition</div>
-              <div class="kv-grid">
-                <div class="kv-row"><span class="kv-key">Type</span><span class="kv-val" id="ad-type">—</span></div>
-                <div class="kv-row"><span class="kv-key">Name</span><span class="kv-val mono" id="ad-name">—</span></div>
-                <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="ad-desc">—</span></div>
-              </div>
-            </div>
-
-            <div class="op-section" id="params-section" style="display:none">
-              <div class="op-section-title">
+            <div id="params-block" style="display:none">
+              <div class="doc-gap"></div>
+              <div class="doc-params-label">
                 Selection Parameters
-                <span class="section-badge">Determines which rows are archived</span>
+                <span class="param-note">determines which rows are archived</span>
               </div>
-              <table class="params-table">
-                <thead>
-                  <tr><th>Parameter</th><th>Prompt</th><th>Default Value</th></tr>
-                </thead>
+              <table class="param-table">
+                <thead><tr><th>Parameter</th><th>Prompt</th><th>Default</th></tr></thead>
                 <tbody id="params-body"></tbody>
               </table>
             </div>
 
-            <div class="op-section">
-              <div class="op-section-title">
-                Alternate Description
-                <span class="section-badge section-badge--edit">Saved to YAML · Not written to Optim</span>
-              </div>
-              <div class="alt-desc-wrap">
-                <textarea id="ar-alt-desc" class="alt-desc-input" placeholder="Add a plain-language description for this archive request…" rows="3"></textarea>
-                <div class="alt-desc-footer">
-                  <button class="btn-save-alt" onclick="saveAltDesc('ar')">Save</button>
-                  <span class="alt-desc-saved" id="ar-alt-saved"></span>
-                </div>
-              </div>
+            <div class="doc-gap"></div>
+            <div class="doc-line"><span class="doc-key">Runtime Override</span><span class="doc-val" id="ar-override">—</span></div>
+
+            <!-- Note inline at bottom -->
+            <div class="doc-note-row">
+              <span class="doc-note-label">Note <span class="yaml-note">yaml</span></span>
+              <input type="text" id="ar-alt-desc" class="note-input" placeholder="Plain-language note…" maxlength="160" />
+              <button class="note-save" onclick="saveAltDesc('ar')">Save</button>
+              <span class="note-saved" id="ar-alt-saved"></span>
             </div>
+
           </div>
         </div>
 
-        <!-- RIGHT: Insert + Delete stacked -->
-        <div class="op-right-stack">
+        <div class="op-connector">↓</div>
 
-          <!-- Insert -->
-          <div class="op-card op-card--ir">
-            <div class="op-card-header">
-              <div class="op-type-pill op-type-pill--ir">IR</div>
-              <div class="op-card-title">
-                <div class="op-card-type-label">Insert Request</div>
-                <div class="op-card-obj-name" id="ir-name">—</div>
-              </div>
-              <div class="op-checksum" id="ir-checksum"></div>
+        <!-- ── INSERT ──────────────────────────────────────────────────── -->
+        <div class="op-band op-band--ir">
+          <div class="op-doc">
+
+            <div class="doc-header">
+              <span class="op-badge op-badge--ir">IR</span>
+              <span class="doc-obj-name" id="ir-name">—</span>
+              <span class="doc-meta" id="ir-meta"></span>
             </div>
-            <div class="op-card-body">
-              <div class="op-section">
-                <div class="op-section-title">Summary</div>
-                <div class="kv-grid">
-                  <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="ir-desc">—</span></div>
-                  <div class="kv-row"><span class="kv-key">Last Updated</span><span class="kv-val" id="ir-updated">—</span></div>
-                  <div class="kv-row"><span class="kv-key">Modified By</span><span class="kv-val mono" id="ir-by">—</span></div>
-                </div>
+
+            <div class="doc-2col">
+              <div class="doc-col">
+                <div class="doc-line"><span class="doc-key">Description</span><span class="doc-val" id="ir-desc">—</span></div>
+                <div class="doc-line"><span class="doc-key">Run Location</span><span class="doc-val" id="ir-run-location">—</span></div>
+                <div class="doc-line" id="ir-server-row" style="display:none"><span class="doc-key">Server</span><span class="doc-val mono" id="ir-server-name">—</span></div>
               </div>
-              <div class="op-section" id="ir-tm-section" style="display:none">
-                <div class="op-section-title">Table Map</div>
-                <div class="kv-grid">
-                  <div class="kv-row"><span class="kv-key">Type</span><span class="kv-val" id="tm-type">—</span></div>
-                  <div class="kv-row"><span class="kv-key">Name</span><span class="kv-val mono" id="tm-name">—</span></div>
-                  <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="tm-desc">—</span></div>
-                </div>
-              </div>
-              <div class="op-section">
-                <div class="op-section-title">
-                  Alternate Description
-                  <span class="section-badge section-badge--edit">Saved to YAML · Not written to Optim</span>
-                </div>
-                <div class="alt-desc-wrap">
-                  <textarea id="ir-alt-desc" class="alt-desc-input" placeholder="Add a plain-language description…" rows="2"></textarea>
-                  <div class="alt-desc-footer">
-                    <button class="btn-save-alt" onclick="saveAltDesc('ir')">Save</button>
-                    <span class="alt-desc-saved" id="ir-alt-saved"></span>
-                  </div>
-                </div>
+              <div class="doc-col" id="ir-tm-section" style="display:none">
+                <div class="doc-col-label">Table Map</div>
+                <div class="doc-line"><span class="doc-key">Type</span><span class="doc-val" id="tm-type">—</span></div>
+                <div class="doc-line"><span class="doc-key">Name</span><span class="doc-val mono" id="tm-name">—</span></div>
+                <div class="doc-line" id="tm-desc-row"><span class="doc-key">Description</span><span class="doc-val" id="tm-desc">—</span></div>
               </div>
             </div>
+
+            <div class="doc-note-row">
+              <span class="doc-note-label">Note <span class="yaml-note">yaml</span></span>
+              <input type="text" id="ir-alt-desc" class="note-input" placeholder="Plain-language note…" maxlength="160" />
+              <button class="note-save" onclick="saveAltDesc('ir')">Save</button>
+              <span class="note-saved" id="ir-alt-saved"></span>
+            </div>
+
           </div>
+        </div>
 
-          <!-- Delete -->
-          <div class="op-card op-card--dr">
-            <div class="op-card-header">
-              <div class="op-type-pill op-type-pill--dr">DR</div>
-              <div class="op-card-title">
-                <div class="op-card-type-label">Delete Request</div>
-                <div class="op-card-obj-name" id="dr-name">—</div>
-              </div>
-              <div class="op-checksum" id="dr-checksum"></div>
+        <div class="op-connector">↓</div>
+
+        <!-- ── DELETE ──────────────────────────────────────────────────── -->
+        <div class="op-band op-band--dr">
+          <div class="op-doc">
+
+            <div class="doc-header">
+              <span class="op-badge op-badge--dr">DR</span>
+              <span class="doc-obj-name" id="dr-name">—</span>
+              <span class="doc-meta" id="dr-meta"></span>
             </div>
-            <div class="op-card-body">
-              <div class="op-section">
-                <div class="op-section-title">Summary</div>
-                <div class="kv-grid">
-                  <div class="kv-row"><span class="kv-key">Description</span><span class="kv-val" id="dr-desc">—</span></div>
-                  <div class="kv-row"><span class="kv-key">Last Updated</span><span class="kv-val" id="dr-updated">—</span></div>
-                  <div class="kv-row"><span class="kv-key">Modified By</span><span class="kv-val mono" id="dr-by">—</span></div>
-                </div>
-              </div>
-              <div class="op-section">
-                <div class="op-section-title">
-                  Alternate Description
-                  <span class="section-badge section-badge--edit">Saved to YAML · Not written to Optim</span>
-                </div>
-                <div class="alt-desc-wrap">
-                  <textarea id="dr-alt-desc" class="alt-desc-input" placeholder="Add a plain-language description…" rows="2"></textarea>
-                  <div class="alt-desc-footer">
-                    <button class="btn-save-alt" onclick="saveAltDesc('dr')">Save</button>
-                    <span class="alt-desc-saved" id="dr-alt-saved"></span>
-                  </div>
-                </div>
-              </div>
+
+            <div class="doc-line"><span class="doc-key">Description</span><span class="doc-val" id="dr-desc">—</span></div>
+            <div class="doc-line"><span class="doc-key">Run Location</span><span class="doc-val" id="dr-run-location">—</span></div>
+            <div class="doc-line" id="dr-server-row" style="display:none"><span class="doc-key">Server</span><span class="doc-val mono" id="dr-server-name">—</span></div>
+
+            <div class="doc-note-row">
+              <span class="doc-note-label">Note <span class="yaml-note">yaml</span></span>
+              <input type="text" id="dr-alt-desc" class="note-input" placeholder="Plain-language note…" maxlength="160" />
+              <button class="note-save" onclick="saveAltDesc('dr')">Save</button>
+              <span class="note-saved" id="dr-alt-saved"></span>
             </div>
+
           </div>
+        </div>
 
-        </div><!-- /op-right-stack -->
-      </div><!-- /op-layout -->
-
-    </div><!-- /defn-content -->
+      </div>
+    </div>
   </div>
 
-  <script src="js/defn.js"></script>
+  <script src="/concierge-ui/js/defn.js"></script>
 </body>
 </html>

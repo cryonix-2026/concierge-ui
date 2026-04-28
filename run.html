@@ -9,6 +9,7 @@
 </head>
 <body>
 
+  <!-- Issue #1,#2,#3 fixed: no C log, no OPTIM SERVER, proper brand -->
   <header class="app-header">
     <div class="header-brand">
       <div class="brand-mark">C</div>
@@ -16,10 +17,6 @@
         <span class="brand-name">Cryonix</span>
         <span class="brand-sub">Data Lifecycle Orchestration</span>
       </div>
-    </div>
-    <div class="header-meta">
-      <button class="btn-refresh-global" id="btn-refresh" onclick="refresh()">↺ Refresh</button>
-      <span class="server-status"><span class="status-dot"></span>OPTIM SERVER · CONNECTED</span>
     </div>
   </header>
 
@@ -53,29 +50,29 @@
         </div>
       </div>
 
-      <!-- Step Pipeline -->
-      <div class="run-pipeline" id="run-pipeline"></div>
+      <!-- Mod #1: Pipeline with Refresh button at top right -->
+      <div class="run-pipeline-card">
+        <div class="run-pipeline" id="run-pipeline"></div>
+        <!-- Refresh button prominent in workflow block -->
+        <button class="btn-refresh-inline" id="btn-refresh" onclick="refresh()">↺ Refresh</button>
+      </div>
 
       <!-- Two column: Left = actions, Right = preceding step context -->
       <div class="run-layout">
 
-        <!-- LEFT: Next action -->
         <div class="run-card">
           <div class="run-card-header" id="action-header">Next Action</div>
-          <div class="run-card-body" id="action-body">
-            <!-- Populated by JS -->
-          </div>
+          <div class="run-card-body" id="action-body"></div>
         </div>
 
-        <!-- RIGHT: Preceding step summary -->
         <div class="run-card" id="context-card" style="display:none">
           <div class="run-card-header">Preceding Steps</div>
           <div class="run-card-body" id="context-body"></div>
         </div>
 
-      </div><!-- /run-layout -->
+      </div>
 
-    </div><!-- /run-content -->
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>

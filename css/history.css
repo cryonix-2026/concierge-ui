@@ -59,7 +59,7 @@
 }
 .history-table td {
   padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle; font-size: 12px;
+  vertical-align: top; font-size: 12px;
 }
 .history-table tr:last-child td { border-bottom: none; }
 .history-table tr:hover td { background: #fafbfd; }
